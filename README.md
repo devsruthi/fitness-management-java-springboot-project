@@ -1,8 +1,8 @@
-# Fitness & Wellness Center Management System
+# Health Club Operations REST API
 
-Spring Boot REST API for M604 Advanced Programming.
+A Java Spring Boot application that provides REST services for a fitness and wellness centre.
 
-The application uses an existing MySQL database. Hibernate does not create or change tables.
+This project was developed for the M604 Advanced Programming module.
 
 # Database setup and connection
 
