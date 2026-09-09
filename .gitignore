@@ -1,4 +1,6 @@
 target/
+application-local.properties
+.env
 .idea/
 *.iml
 .DS_Store
