@@ -1,6 +1,7 @@
 package com.fitness.management.repository;
 
 import com.fitness.management.entity.Booking;
+import com.fitness.management.entity.enums.BookingStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -14,4 +15,9 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     @EntityGraph(attributePaths = {"member", "session", "session.serviceType", "session.trainer"})
     Optional<Booking> findTopByMember_MemberIdAndSession_SessionIdOrderByBookingIdDesc(
             Integer memberId, Integer sessionId);
+
+    boolean existsByMember_MemberIdAndSession_SessionIdAndBookingStatus(
+            Integer memberId, Integer sessionId, BookingStatus bookingStatus);
+
+    List<Booking> findBySession_SessionId(Integer sessionId);
 }

@@ -1,8 +1,4 @@
 
-
---  ---------------------------- TABLES ---------------------------- --
--- *********************************************************************** --
-
 CREATE TABLE Members (
     member_id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(100) NOT NULL,
@@ -55,10 +51,7 @@ CREATE TABLE Payments (
     payment_date DATE NOT NULL,
     payment_amount DECIMAL(15, 2) NOT NULL CHECK (payment_amount >= 0),
     payment_method ENUM(
-        'CREDIT_CARD',
-        'DEBIT_CARD',
-        'PAYPAL',
-        'BANK_TRANSFER'
+        'CREDIT_CARD','DEBIT_CARD','PAYPAL','BANK_TRANSFER'
     ) NOT NULL,
     payment_status ENUM('SUCCESS', 'FAILED', 'PENDING') NOT NULL DEFAULT 'PENDING',
     FOREIGN KEY (subscription_id) REFERENCES Member_Subscriptions (subscription_id)
@@ -78,8 +71,7 @@ CREATE TABLE Service_Types (
         )
         OR (
             service_mode = 'GROUP'
-            AND max_participants > 1
-            AND max_participants <= 20
+            AND max_participants > 1 AND max_participants <= 20
         )
     )
 );
@@ -100,12 +92,10 @@ CREATE TABLE Sessions (
     FOREIGN KEY (trainer_id) REFERENCES Trainers (trainer_id),
     CHECK (
         (
-            session_mode = 'OFFLINE'
-            AND session_room IS NOT NULL
+            session_mode = 'OFFLINE' AND session_room IS NOT NULL
         )
         OR (
-            session_mode = 'ONLINE'
-            AND session_room IS NULL
+            session_mode = 'ONLINE' AND session_room IS NULL
         )
     )
 );
@@ -116,8 +106,26 @@ CREATE TABLE Bookings (
     session_id INT NOT NULL,
     booking_created_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     booking_cancelled_time DATETIME,
-    booking_status ENUM('BOOKED', 'CANCELLED') NOT NULL DEFAULT 'BOOKED',
-    FOREIGN KEY (member_id) REFERENCES Members (member_id),
+    booking_cancelled_reason VARCHAR(250),
+    booking_cancelled_by ENUM('MEMBER','SYSTEM'),
+    booking_status ENUM ('BOOKED','CANCELLED') NOT NULL DEFAULT 'BOOKED',
+    FOREIGN KEY(member_id) REFERENCES Members (member_id),
     FOREIGN KEY (session_id) REFERENCES Sessions (session_id),
-    UNIQUE (member_id, session_id)
+    UNIQUE (member_id, session_id)  -- A member cannot have multiple bookings for the same session 
+);
+
+
+CREATE TABLE Session_updations(
+    session_update_id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id INT NOT NULL,
+    trainer_id INT NOT NULL,
+    session_date DATE NOT NULL,
+    start_time DATETIME NOT NULL,
+    session_room VARCHAR(100) NOT NULL,
+    session_mode ENUM('ONLINE', 'OFFLINE') NOT NULL DEFAULT 'OFFLINE',
+    updation_type ENUM('TRAINER_CHANGED','TIME_CHANGED','ROOM_CHANGED','MODE_CHANGED','OTHER') NOT NULL,
+    updation_reason VARCHAR(250) NOT NULL,
+    session_updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES Sessions (session_id),
+    FOREIGN KEY (trainer_id) REFERENCES Trainers (trainer_id)
 );

@@ -10,8 +10,7 @@ Run the SQL files in this order in MySQL Workbench:
 
 1. `sql/01_create_schema.sql`
 2. `sql/02_create_tables.sql`
-3. `sql/03_stored_procedures.sql`
-4. `sql/04_seed_data.sql`
+3. `sql/03_seed_data.sql`
 
 Then set your local MySQL details in `src/main/resources/application.properties`:
 

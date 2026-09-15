@@ -6,16 +6,22 @@ import com.fitness.management.dto.request.SubscriptionRequest;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
 import com.fitness.management.dto.response.PurchaseResponse;
 import com.fitness.management.dto.response.SubscriptionPlanResponse;
+import com.fitness.management.entity.Member;
 import com.fitness.management.entity.MemberSubscription;
+import com.fitness.management.entity.Payment;
 import com.fitness.management.entity.SubscriptionPlan;
+import com.fitness.management.entity.enums.AccountStatus;
+import com.fitness.management.entity.enums.PaymentStatus;
 import com.fitness.management.entity.enums.PlanStatus;
+import com.fitness.management.entity.enums.SubscriptionStatus;
 import com.fitness.management.exception.BusinessRuleException;
 import com.fitness.management.exception.ResourceNotFoundException;
+import com.fitness.management.repository.MemberRepository;
 import com.fitness.management.repository.MemberSubscriptionRepository;
-import com.fitness.management.repository.StoredProcedureRepository;
-import com.fitness.management.repository.StoredProcedureRepository.PurchaseProcedureResult;
+import com.fitness.management.repository.PaymentRepository;
 import com.fitness.management.repository.SubscriptionPlanRepository;
 import com.fitness.management.service.SubscriptionService;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +29,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
 
-    private final StoredProcedureRepository storedProcedureRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final MemberSubscriptionRepository memberSubscriptionRepository;
+    private final MemberRepository memberRepository;
+    private final PaymentRepository paymentRepository;
 
     public SubscriptionServiceImpl(
-            StoredProcedureRepository storedProcedureRepository,
             SubscriptionPlanRepository subscriptionPlanRepository,
-            MemberSubscriptionRepository memberSubscriptionRepository) {
-        this.storedProcedureRepository = storedProcedureRepository;
+            MemberSubscriptionRepository memberSubscriptionRepository,
+            MemberRepository memberRepository,
+            PaymentRepository paymentRepository) {
         this.subscriptionPlanRepository = subscriptionPlanRepository;
         this.memberSubscriptionRepository = memberSubscriptionRepository;
+        this.memberRepository = memberRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Override
@@ -44,24 +53,72 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional
     public MemberSubscriptionResponse addSubscription(Integer memberId, SubscriptionRequest request) {
-        Integer subscriptionId = storedProcedureRepository.addSubscription(memberId, request.planId());
-        MemberSubscription subscription = memberSubscriptionRepository
-                .findWithPlanAndMemberBySubscriptionId(subscriptionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Subscription was created but could not be loaded"));
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new BusinessRuleException("Member not found or not active!"));
+        if (member.getAccountStatus() != AccountStatus.ACTIVE) {
+            throw new BusinessRuleException("Member not found or not active!");
+        }
+
+        SubscriptionPlan plan = subscriptionPlanRepository.findById(request.planId())
+                .orElseThrow(() -> new BusinessRuleException("Subscription plan not found or not active!"));
+        if (plan.getPlanStatus() != PlanStatus.ACTIVE) {
+            throw new BusinessRuleException("Subscription plan not found or not active!");
+        }
+
+        boolean alreadySelected = memberSubscriptionRepository
+                .existsByMember_MemberIdAndPlan_PlanIdAndSubscriptionStatusIn(
+                        memberId,
+                        request.planId(),
+                        List.of(SubscriptionStatus.PENDING, SubscriptionStatus.ACTIVE));
+        if (alreadySelected) {
+            throw new BusinessRuleException(
+                    "You have already chosen this subscription plan and it is pending/active!");
+        }
+
+        MemberSubscription subscription = new MemberSubscription();
+        subscription.setMember(member);
+        subscription.setPlan(plan);
+        subscription.setStartDate(LocalDate.now());
+        subscription.setSubscriptionStatus(SubscriptionStatus.PENDING);
+
+        MemberSubscription saved = memberSubscriptionRepository.save(subscription);
         return MemberSubscriptionResponse.from(
-                subscription,
+                saved,
                 "Subscription plan added to cart. Complete payment to activate.");
     }
 
     @Override
+    @Transactional
     public PurchaseResponse purchase(Integer subscriptionId, PurchaseRequest request) {
-        PurchaseProcedureResult result = storedProcedureRepository.purchaseSubscription(
-                subscriptionId, request.paymentMethod().name());
+        MemberSubscription subscription = memberSubscriptionRepository
+                .findWithPlanAndMemberBySubscriptionId(subscriptionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subscription not found"));
+
+        if (subscription.getSubscriptionStatus() == SubscriptionStatus.ACTIVE) {
+            throw new BusinessRuleException("Subscription is already active.");
+        }
+        if (subscription.getSubscriptionStatus() != SubscriptionStatus.PENDING) {
+            throw new BusinessRuleException("You have not chosen the subscription plan!");
+        }
+
+        Payment payment = new Payment();
+        payment.setSubscription(subscription);
+        payment.setPaymentDate(LocalDate.now());
+        payment.setPaymentAmount(subscription.getPlan().getPlanPrice());
+        payment.setPaymentMethod(request.paymentMethod());
+        payment.setPaymentStatus(PaymentStatus.SUCCESS);
+        Payment savedPayment = paymentRepository.save(payment);
+
+        subscription.setSubscriptionStatus(SubscriptionStatus.ACTIVE);
+        subscription.setStartDate(LocalDate.now());
+        memberSubscriptionRepository.save(subscription);
+
         return new PurchaseResponse(
-                result.paymentId(),
-                result.subscriptionId() != null ? result.subscriptionId() : subscriptionId,
-                result.message());
+                savedPayment.getPaymentId(),
+                subscription.getSubscriptionId(),
+                "Congrats,Purchase successful, your subscription is active now.");
     }
 
     @Override

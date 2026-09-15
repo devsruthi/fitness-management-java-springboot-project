@@ -5,15 +5,13 @@ These SQL files create the MySQL database used by the Spring Boot API:
 
 - schema
 - tables
-- stored procedures
 - sample data
 
 Run them in this order in MySQL Workbench:
 
 1. `01_create_schema.sql`
 2. `02_create_tables.sql`
-3. `03_stored_procedures.sql`
-4. `04_seed_data.sql`
+3. `03_seed_data.sql`
 
 Then set your local MySQL details in `src/main/resources/application.properties`:
 
