@@ -32,14 +32,16 @@ public class DashboardController {
         return ResponseEntity.ok(dashboardService.listMostCancelledSessions());
     }
 
-    @GetMapping("/revenue/monthly")
+    @GetMapping({"/monthly-revenue", "/revenue/monthly"})
     public ResponseEntity<List<MonthlyRevenueResponse>> monthlyRevenue(
-            @RequestParam(required = false) Integer year) {
-        return ResponseEntity.ok(dashboardService.listMonthlyRevenue(year));
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        return ResponseEntity.ok(dashboardService.listMonthlyRevenue(year, month));
     }
 
-    @GetMapping("/revenue/yearly")
-    public ResponseEntity<List<YearlyRevenueResponse>> yearlyRevenue() {
-        return ResponseEntity.ok(dashboardService.listYearlyRevenue());
+    @GetMapping({"/yearly-revenue", "/revenue/yearly"})
+    public ResponseEntity<List<YearlyRevenueResponse>> yearlyRevenue(
+            @RequestParam(required = false) Integer year) {
+        return ResponseEntity.ok(dashboardService.listYearlyRevenue(year));
     }
 }

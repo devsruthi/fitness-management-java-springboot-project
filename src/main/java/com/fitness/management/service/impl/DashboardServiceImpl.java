@@ -8,6 +8,7 @@ import com.fitness.management.dto.response.YearlyRevenueResponse;
 import com.fitness.management.entity.enums.BookingStatus;
 import com.fitness.management.entity.enums.ServiceMode;
 import com.fitness.management.entity.enums.ServiceTypeStatus;
+import com.fitness.management.exception.BusinessRuleException;
 import com.fitness.management.repository.BookingRepository;
 import com.fitness.management.repository.PaymentRepository;
 import com.fitness.management.repository.SessionRepository;
@@ -18,6 +19,7 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,18 +70,25 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MonthlyRevenueResponse> listMonthlyRevenue(Integer year) {
+    public List<MonthlyRevenueResponse> listMonthlyRevenue(Integer year, Integer month) {
+        if (month != null && (month < 1 || month > 12)) {
+            throw new BusinessRuleException("month must be between 1 and 12", HttpStatus.BAD_REQUEST);
+        }
+
         List<MonthlyRevenueResponse> results = new ArrayList<>();
         for (Object[] row : paymentRepository.sumSuccessfulPaymentsByMonth()) {
             int revenueYear = toInt(row[0]);
+            int revenueMonth = toInt(row[1]);
             if (year != null && revenueYear != year) {
                 continue;
             }
-            int month = toInt(row[1]);
+            if (month != null && revenueMonth != month) {
+                continue;
+            }
             results.add(new MonthlyRevenueResponse(
                     revenueYear,
-                    month,
-                    Month.of(month).getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                    revenueMonth,
+                    Month.of(revenueMonth).getDisplayName(TextStyle.FULL, Locale.ENGLISH),
                     toMoney(row[2]),
                     toLong(row[3])));
         }
@@ -88,10 +97,14 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<YearlyRevenueResponse> listYearlyRevenue() {
+    public List<YearlyRevenueResponse> listYearlyRevenue(Integer year) {
         List<YearlyRevenueResponse> results = new ArrayList<>();
         for (Object[] row : paymentRepository.sumSuccessfulPaymentsByYear()) {
-            results.add(new YearlyRevenueResponse(toInt(row[0]), toMoney(row[1]), toLong(row[2])));
+            int revenueYear = toInt(row[0]);
+            if (year != null && revenueYear != year) {
+                continue;
+            }
+            results.add(new YearlyRevenueResponse(revenueYear, toMoney(row[1]), toLong(row[2])));
         }
         return results;
     }

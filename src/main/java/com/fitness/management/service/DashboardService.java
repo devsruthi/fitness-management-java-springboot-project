@@ -12,7 +12,7 @@ public interface DashboardService {
 
     List<CancelledSessionStatsResponse> listMostCancelledSessions();
 
-    List<MonthlyRevenueResponse> listMonthlyRevenue(Integer year);
+    List<MonthlyRevenueResponse> listMonthlyRevenue(Integer year, Integer month);
 
-    List<YearlyRevenueResponse> listYearlyRevenue();
+    List<YearlyRevenueResponse> listYearlyRevenue(Integer year);
 }

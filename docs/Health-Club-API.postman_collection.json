@@ -255,15 +255,24 @@
         },
         {
           "name": "Revenue per month",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/monthly" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/dashboard/monthly-revenue?month=3"
+          }
         },
         {
           "name": "Revenue per month for a year",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/monthly?year=2026" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/dashboard/monthly-revenue?year=2026&month=3"
+          }
         },
         {
           "name": "Revenue per year",
-          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/yearly" }
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/dashboard/yearly-revenue?year=2026"
+          }
         }
       ]
     }
