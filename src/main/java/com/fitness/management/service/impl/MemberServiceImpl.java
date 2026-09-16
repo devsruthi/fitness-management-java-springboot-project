@@ -4,11 +4,15 @@ import com.fitness.management.dto.request.MemberLoginRequest;
 import com.fitness.management.dto.request.MemberRegistrationRequest;
 import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
+import com.fitness.management.dto.response.MessageResponse;
 import com.fitness.management.entity.Member;
 import com.fitness.management.entity.enums.AccountStatus;
 import com.fitness.management.exception.BusinessRuleException;
 import com.fitness.management.exception.ResourceNotFoundException;
+import com.fitness.management.repository.BookingRepository;
 import com.fitness.management.repository.MemberRepository;
+import com.fitness.management.repository.MemberSubscriptionRepository;
+import com.fitness.management.repository.PaymentRepository;
 import com.fitness.management.service.MemberService;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,9 +24,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberServiceImpl implements MemberService {
 
     private final MemberRepository memberRepository;
+    private final PaymentRepository paymentRepository;
+    private final MemberSubscriptionRepository memberSubscriptionRepository;
+    private final BookingRepository bookingRepository;
 
-    public MemberServiceImpl(MemberRepository memberRepository) {
+    public MemberServiceImpl(
+            MemberRepository memberRepository,
+            PaymentRepository paymentRepository,
+            MemberSubscriptionRepository memberSubscriptionRepository,
+            BookingRepository bookingRepository) {
         this.memberRepository = memberRepository;
+        this.paymentRepository = paymentRepository;
+        this.memberSubscriptionRepository = memberSubscriptionRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @Override
@@ -74,5 +88,20 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
         return MemberResponse.from(member);
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse deleteMember(Integer memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+
+        paymentRepository.deleteBySubscription_Member_MemberId(memberId);
+        memberSubscriptionRepository.deleteByMember_MemberId(memberId);
+        bookingRepository.deleteByMember_MemberId(memberId);
+        memberRepository.deleteById(memberId);
+
+        return new MessageResponse("Member and related bookings, subscriptions, and payments deleted");
     }
 }

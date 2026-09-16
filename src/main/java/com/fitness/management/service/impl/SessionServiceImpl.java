@@ -4,13 +4,16 @@ import com.fitness.management.dto.response.MessageResponse;
 import com.fitness.management.dto.response.SessionResponse;
 import com.fitness.management.entity.Booking;
 import com.fitness.management.entity.Session;
+import com.fitness.management.entity.enums.BookingCancelledBy;
 import com.fitness.management.entity.enums.BookingStatus;
 import com.fitness.management.entity.enums.SessionStatus;
 import com.fitness.management.exception.ResourceNotFoundException;
 import com.fitness.management.repository.BookingRepository;
 import com.fitness.management.repository.SessionRepository;
 import com.fitness.management.service.SessionService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,33 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    public List<SessionResponse> listUpcomingScheduledSessions() {
+        return sessionRepository
+                .findUpcomingScheduledSessions(SessionStatus.SCHEDULED, LocalDate.now(), LocalTime.now())
+                .stream()
+                .map(SessionResponse::from)
+                .toList();
+    }
+
+    @Override
+    public List<SessionResponse> listCompletedSessions() {
+        return sessionRepository
+                .findBySessionStatusOrderBySessionDateAscStartTimeAsc(SessionStatus.COMPLETED)
+                .stream()
+                .map(SessionResponse::from)
+                .toList();
+    }
+
+    @Override
+    public List<SessionResponse> listCancelledSessions() {
+        return sessionRepository
+                .findBySessionStatusOrderBySessionDateAscStartTimeAsc(SessionStatus.CANCELLED)
+                .stream()
+                .map(SessionResponse::from)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public MessageResponse cancelSession(Integer sessionId) {
         Session session = sessionRepository.findById(sessionId)
@@ -46,12 +76,32 @@ public class SessionServiceImpl implements SessionService {
         sessionRepository.save(session);
 
         List<Booking> bookings = bookingRepository.findBySession_SessionId(sessionId);
+        LocalDateTime cancelledAt = LocalDateTime.now();
         for (Booking booking : bookings) {
+            if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+                continue;
+            }
             booking.setBookingStatus(BookingStatus.CANCELLED);
-            booking.setBookingCancelledTime(LocalDateTime.now());
+            booking.setBookingCancelledTime(cancelledAt);
+            booking.setBookingCancelledBy(BookingCancelledBy.SYSTEM);
+            booking.setBookingCancelledReason("Session cancelled");
         }
         bookingRepository.saveAll(bookings);
 
-        return new MessageResponse("Session & Bookings cancelled successfully");
+        return new MessageResponse("Session and related bookings cancelled successfully");
+    }
+
+    @Override
+    @Transactional
+    public MessageResponse deleteSession(Integer sessionId) {
+        if (!sessionRepository.existsById(sessionId)) {
+            throw new ResourceNotFoundException("Session not found");
+        }
+
+        sessionRepository.deleteSessionUpdationsBySessionId(sessionId);
+        bookingRepository.deleteBySession_SessionId(sessionId);
+        sessionRepository.deleteById(sessionId);
+
+        return new MessageResponse("Session and related bookings and session updates deleted");
     }
 }

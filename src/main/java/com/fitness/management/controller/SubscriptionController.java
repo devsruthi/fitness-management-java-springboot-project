@@ -3,6 +3,7 @@ package com.fitness.management.controller;
 import com.fitness.management.dto.request.PurchaseRequest;
 import com.fitness.management.dto.request.SubscriptionRequest;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
+import com.fitness.management.dto.response.PaymentResponse;
 import com.fitness.management.dto.response.PurchaseResponse;
 import com.fitness.management.dto.response.SubscriptionPlanResponse;
 import com.fitness.management.service.SubscriptionService;
@@ -38,6 +39,17 @@ public class SubscriptionController {
             @Valid @RequestBody SubscriptionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(subscriptionService.addSubscription(memberId, request));
+    }
+
+    @GetMapping("/members/{memberId}/subscriptions/current")
+    public ResponseEntity<MemberSubscriptionResponse> getCurrentOrLatestSubscription(
+            @PathVariable Integer memberId) {
+        return ResponseEntity.ok(subscriptionService.getCurrentOrLatestSubscription(memberId));
+    }
+
+    @GetMapping("/members/{memberId}/payments")
+    public ResponseEntity<List<PaymentResponse>> listMemberPayments(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(subscriptionService.listMemberPayments(memberId));
     }
 
     @PostMapping("/subscriptions/{subscriptionId}/purchase")

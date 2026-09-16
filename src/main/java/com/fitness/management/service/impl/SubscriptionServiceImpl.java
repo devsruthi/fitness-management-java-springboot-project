@@ -4,6 +4,7 @@ import com.fitness.management.dto.request.PurchaseRequest;
 import com.fitness.management.dto.request.SubscriptionPlanRequest;
 import com.fitness.management.dto.request.SubscriptionRequest;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
+import com.fitness.management.dto.response.PaymentResponse;
 import com.fitness.management.dto.response.PurchaseResponse;
 import com.fitness.management.dto.response.SubscriptionPlanResponse;
 import com.fitness.management.entity.Member;
@@ -87,6 +88,36 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         return MemberSubscriptionResponse.from(
                 saved,
                 "Subscription plan added to cart. Complete payment to activate.");
+    }
+
+    @Override
+    public MemberSubscriptionResponse getCurrentOrLatestSubscription(Integer memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+
+        return memberSubscriptionRepository
+                .findFirstByMember_MemberIdAndSubscriptionStatusOrderByStartDateDescSubscriptionIdDesc(
+                        memberId, SubscriptionStatus.ACTIVE)
+                .map(subscription -> MemberSubscriptionResponse.from(subscription, "Current active subscription"))
+                .orElseGet(() -> MemberSubscriptionResponse.from(
+                        memberSubscriptionRepository
+                                .findFirstByMember_MemberIdOrderBySubscriptionIdDesc(memberId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                        "No subscription found for this member")),
+                        "Latest subscription"));
+    }
+
+    @Override
+    public List<PaymentResponse> listMemberPayments(Integer memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+        return paymentRepository
+                .findBySubscription_Member_MemberIdOrderByPaymentDateDescPaymentIdDesc(memberId)
+                .stream()
+                .map(PaymentResponse::from)
+                .toList();
     }
 
     @Override

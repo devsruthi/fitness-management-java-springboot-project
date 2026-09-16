@@ -5,6 +5,7 @@ import com.fitness.management.dto.response.BookingResponse;
 import com.fitness.management.entity.Booking;
 import com.fitness.management.entity.Member;
 import com.fitness.management.entity.Session;
+import com.fitness.management.entity.enums.BookingCancelledBy;
 import com.fitness.management.entity.enums.BookingStatus;
 import com.fitness.management.entity.enums.SessionStatus;
 import com.fitness.management.entity.enums.SubscriptionStatus;
@@ -15,7 +16,10 @@ import com.fitness.management.repository.MemberRepository;
 import com.fitness.management.repository.MemberSubscriptionRepository;
 import com.fitness.management.repository.SessionRepository;
 import com.fitness.management.service.BookingService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +79,21 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    public List<BookingResponse> listAllBookings() {
+        return bookingRepository.findAllByOrderByBookingCreatedTimeDesc().stream()
+                .map(booking -> BookingResponse.from(booking, null))
+                .toList();
+    }
+
+    @Override
+    public List<BookingResponse> listCancelledBookings() {
+        return bookingRepository.findByBookingStatusOrderByBookingCancelledTimeDesc(BookingStatus.CANCELLED)
+                .stream()
+                .map(booking -> BookingResponse.from(booking, null))
+                .toList();
+    }
+
+    @Override
     public List<BookingResponse> listMemberBookings(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
@@ -82,5 +101,65 @@ public class BookingServiceImpl implements BookingService {
         return bookingRepository.findByMember_MemberIdOrderByBookingCreatedTimeDesc(memberId).stream()
                 .map(booking -> BookingResponse.from(booking, null))
                 .toList();
+    }
+
+    @Override
+    public List<BookingResponse> listUpcomingMemberBookings(Integer memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        return bookingRepository
+                .findByMember_MemberIdAndBookingStatusOrderByBookingCreatedTimeDesc(memberId, BookingStatus.BOOKED)
+                .stream()
+                .filter(booking -> booking.getSession().getSessionStatus() == SessionStatus.SCHEDULED)
+                .filter(booking -> {
+                    LocalDate sessionDate = booking.getSession().getSessionDate();
+                    LocalTime startTime = booking.getSession().getStartTime();
+                    return sessionDate.isAfter(today)
+                            || (sessionDate.isEqual(today) && !startTime.isBefore(now));
+                })
+                .sorted(Comparator.comparing((Booking booking) -> booking.getSession().getSessionDate())
+                        .thenComparing(booking -> booking.getSession().getStartTime()))
+                .map(booking -> BookingResponse.from(booking, null))
+                .toList();
+    }
+
+    @Override
+    public List<BookingResponse> listCancelledMemberBookings(Integer memberId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+        return bookingRepository
+                .findByMember_MemberIdAndBookingStatusOrderByBookingCancelledTimeDesc(
+                        memberId, BookingStatus.CANCELLED)
+                .stream()
+                .map(booking -> BookingResponse.from(booking, null))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public BookingResponse cancelBookingByMember(Integer memberId, Integer bookingId) {
+        if (!memberRepository.existsById(memberId)) {
+            throw new ResourceNotFoundException("Member not found");
+        }
+
+        Booking booking = bookingRepository.findByBookingIdAndMember_MemberId(bookingId, memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found for this member"));
+
+        if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
+            throw new BusinessRuleException("Booking is already cancelled!");
+        }
+
+        booking.setBookingStatus(BookingStatus.CANCELLED);
+        booking.setBookingCancelledTime(LocalDateTime.now());
+        booking.setBookingCancelledBy(BookingCancelledBy.MEMBER);
+        booking.setBookingCancelledReason("Cancelled by member");
+        bookingRepository.save(booking);
+
+        return BookingResponse.from(booking, "Booking cancelled successfully");
     }
 }

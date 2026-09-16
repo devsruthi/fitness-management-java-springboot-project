@@ -59,5 +59,6 @@ Quick checks:
 - `GET http://localhost:8080/api/service-types`
 - `GET http://localhost:8080/api/members`
 - `GET http://localhost:8080/api/sessions`
+- `GET http://localhost:8080/api/bookings`
 
 A successful response returns JSON.

@@ -4,6 +4,7 @@ import com.fitness.management.dto.request.MemberLoginRequest;
 import com.fitness.management.dto.request.MemberRegistrationRequest;
 import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
+import com.fitness.management.dto.response.MessageResponse;
 import java.util.List;
 
 public interface MemberService {
@@ -15,4 +16,6 @@ public interface MemberService {
     MemberAuthResponse login(MemberLoginRequest request);
 
     MemberResponse getMember(Integer memberId);
+
+    MessageResponse deleteMember(Integer memberId);
 }

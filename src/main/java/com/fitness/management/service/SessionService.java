@@ -8,5 +8,13 @@ public interface SessionService {
 
     List<SessionResponse> listScheduledSessions();
 
+    List<SessionResponse> listUpcomingScheduledSessions();
+
+    List<SessionResponse> listCompletedSessions();
+
+    List<SessionResponse> listCancelledSessions();
+
     MessageResponse cancelSession(Integer sessionId);
+
+    MessageResponse deleteSession(Integer sessionId);
 }

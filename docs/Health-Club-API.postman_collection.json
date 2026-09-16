@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Health Club Operations REST API",
-    "description": "Import into Postman (File → Import). Start the Spring Boot app first so requests go to http://localhost:8080.\n\nRun Catalogue first, then Member workflow from top to bottom.\nRegister and login use the same member (alex.tester@example.com / Alex@123). If register fails because the email already exists, skip it and continue from login.\nRegister/login save memberId. Add subscription saves subscriptionId for purchase and booking.",
+    "description": "Import into Postman (File → Import). Start the Spring Boot app first so requests go to http://localhost:8080.\n\nRun Catalogue first, then Member workflow from top to bottom.\nRegister and login use the same member (alex.tester@example.com / Alex@123). If register fails because the email already exists, skip it and continue from login.\nRegister/login save memberId. Add subscription saves subscriptionId. Book a session saves bookingId.\nDelete member also removes related bookings, subscriptions, and payments. Cancel/delete session also updates or removes related bookings.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -9,7 +9,8 @@
     { "key": "memberId", "value": "1" },
     { "key": "planId", "value": "1" },
     { "key": "subscriptionId", "value": "35" },
-    { "key": "sessionId", "value": "1" }
+    { "key": "sessionId", "value": "1" },
+    { "key": "bookingId", "value": "1" }
   ],
   "item": [
     {
@@ -34,6 +35,13 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/api/sessions"
+          }
+        },
+        {
+          "name": "List all bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/bookings"
           }
         }
       ]
@@ -133,6 +141,23 @@
         },
         {
           "name": "Book a session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.bookingId) {",
+                  "  pm.collectionVariables.set('bookingId', String(json.bookingId));",
+                  "}",
+                  "if (json.sessionId) {",
+                  "  pm.collectionVariables.set('sessionId', String(json.sessionId));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -141,6 +166,34 @@
               "raw": "{\n  \"sessionId\": 1\n}"
             },
             "url": "{{baseUrl}}/api/members/{{memberId}}/bookings"
+          }
+        },
+        {
+          "name": "Get current subscription",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/{{memberId}}/subscriptions/current"
+          }
+        },
+        {
+          "name": "Get upcoming bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/upcoming"
+          }
+        },
+        {
+          "name": "Get cancelled bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/cancelled"
+          }
+        },
+        {
+          "name": "Get payment history",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/{{memberId}}/payments"
           }
         }
       ]
@@ -161,11 +214,58 @@
             "method": "GET",
             "url": "{{baseUrl}}/api/members/{{memberId}}"
           }
+        },
+        {
+          "name": "Delete member",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/members/{{memberId}}"
+          }
         }
       ]
     },
     {
-      "name": "Sessions and bookings",
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Scheduled upcoming sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/sessions/upcoming"
+          }
+        },
+        {
+          "name": "Completed sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/sessions/completed"
+          }
+        },
+        {
+          "name": "Cancelled sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/sessions/cancelled"
+          }
+        },
+        {
+          "name": "Cancel session",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/sessions/{{sessionId}}/cancel"
+          }
+        },
+        {
+          "name": "Delete session",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/sessions/{{sessionId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
       "item": [
         {
           "name": "List member bookings",
@@ -175,10 +275,17 @@
           }
         },
         {
-          "name": "Cancel session",
+          "name": "List cancelled bookings",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/bookings/cancelled"
+          }
+        },
+        {
+          "name": "Cancel booking by member",
           "request": {
             "method": "PUT",
-            "url": "{{baseUrl}}/api/sessions/{{sessionId}}/cancel"
+            "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/{{bookingId}}/cancel"
           }
         }
       ]

@@ -1,5 +1,6 @@
 package com.fitness.management.entity;
 
+import com.fitness.management.entity.enums.BookingCancelledBy;
 import com.fitness.management.entity.enums.BookingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +40,13 @@ public class Booking {
 
     @Column(name = "booking_cancelled_time")
     private LocalDateTime bookingCancelledTime;
+
+    @Column(name = "booking_cancelled_reason", length = 250)
+    private String bookingCancelledReason;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "booking_cancelled_by")
+    private BookingCancelledBy bookingCancelledBy;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "booking_status", nullable = false)
@@ -82,6 +90,22 @@ public class Booking {
 
     public void setBookingCancelledTime(LocalDateTime bookingCancelledTime) {
         this.bookingCancelledTime = bookingCancelledTime;
+    }
+
+    public String getBookingCancelledReason() {
+        return bookingCancelledReason;
+    }
+
+    public void setBookingCancelledReason(String bookingCancelledReason) {
+        this.bookingCancelledReason = bookingCancelledReason;
+    }
+
+    public BookingCancelledBy getBookingCancelledBy() {
+        return bookingCancelledBy;
+    }
+
+    public void setBookingCancelledBy(BookingCancelledBy bookingCancelledBy) {
+        this.bookingCancelledBy = bookingCancelledBy;
     }
 
     public BookingStatus getBookingStatus() {

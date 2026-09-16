@@ -1,6 +1,7 @@
 package com.fitness.management.dto.response;
 
 import com.fitness.management.entity.Booking;
+import com.fitness.management.entity.enums.BookingCancelledBy;
 import com.fitness.management.entity.enums.BookingStatus;
 import java.time.LocalDateTime;
 
@@ -11,6 +12,8 @@ public record BookingResponse(
         BookingStatus bookingStatus,
         LocalDateTime bookingCreatedTime,
         LocalDateTime bookingCancelledTime,
+        String bookingCancelledReason,
+        BookingCancelledBy bookingCancelledBy,
         String message,
         SessionResponse session
 ) {
@@ -22,6 +25,8 @@ public record BookingResponse(
                 booking.getBookingStatus(),
                 booking.getBookingCreatedTime(),
                 booking.getBookingCancelledTime(),
+                booking.getBookingCancelledReason(),
+                booking.getBookingCancelledBy(),
                 message,
                 SessionResponse.from(booking.getSession()));
     }
