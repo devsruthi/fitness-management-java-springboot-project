@@ -7,9 +7,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -42,13 +42,13 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.listCancelledSessions());
     }
 
-    @PutMapping("/{sessionId}/cancel")
-    public ResponseEntity<MessageResponse> cancelSession(@PathVariable Integer sessionId) {
+    @PutMapping("/cancel")
+    public ResponseEntity<MessageResponse> cancelSession(@RequestParam Integer sessionId) {
         return ResponseEntity.ok(sessionService.cancelSession(sessionId));
     }
 
-    @DeleteMapping("/{sessionId}")
-    public ResponseEntity<MessageResponse> deleteSession(@PathVariable Integer sessionId) {
+    @DeleteMapping
+    public ResponseEntity<MessageResponse> deleteSession(@RequestParam Integer sessionId) {
         return ResponseEntity.ok(sessionService.deleteSession(sessionId));
     }
 }

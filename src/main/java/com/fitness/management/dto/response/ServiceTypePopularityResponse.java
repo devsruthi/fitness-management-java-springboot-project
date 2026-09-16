@@ -8,8 +8,8 @@ public record ServiceTypePopularityResponse(
         String serviceTypeName,
         String serviceTypeDescription,
         ServiceMode serviceMode,
+        long bookingCount,
         Integer maxParticipants,
-        ServiceTypeStatus serviceTypeStatus,
-        long bookingCount
+        ServiceTypeStatus serviceTypeStatus
 ) {
 }

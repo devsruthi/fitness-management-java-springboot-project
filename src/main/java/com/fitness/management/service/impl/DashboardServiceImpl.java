@@ -51,9 +51,9 @@ public class DashboardServiceImpl implements DashboardService {
                     serviceType.getServiceTypeName(),
                     serviceType.getServiceTypeDescription(),
                     serviceType.getServiceMode(),
+                    count,
                     serviceType.getMaxParticipants(),
-                    serviceType.getServiceTypeStatus(),
-                    count));
+                    serviceType.getServiceTypeStatus()));
         }
         return byType.values().stream()
                 .sorted(Comparator.comparingLong(ServiceTypePopularityResponse::bookingCount).reversed())

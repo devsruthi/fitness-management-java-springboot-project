@@ -11,10 +11,10 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,17 +32,17 @@ public class SubscriptionController {
         return ResponseEntity.ok(subscriptionService.listActivePlans());
     }
 
-    @PostMapping("/members/{memberId}/subscriptions")
+    @PostMapping("/members/subscriptions")
     public ResponseEntity<MemberSubscriptionResponse> addSubscription(
-            @PathVariable Integer memberId,
+            @RequestParam Integer memberId,
             @Valid @RequestBody SubscriptionRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(subscriptionService.addSubscription(memberId, request));
     }
 
-    @PostMapping("/subscriptions/{subscriptionId}/purchase")
+    @PostMapping("/subscriptions/purchase")
     public ResponseEntity<PurchaseResponse> purchase(
-            @PathVariable Integer subscriptionId,
+            @RequestParam Integer subscriptionId,
             @Valid @RequestBody PurchaseRequest request) {
         return ResponseEntity.ok(subscriptionService.purchase(subscriptionId, request));
     }
