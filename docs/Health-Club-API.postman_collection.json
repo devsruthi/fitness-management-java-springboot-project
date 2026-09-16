@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Health Club Operations REST API",
-    "description": "Import into Postman (File → Import). Start the Spring Boot app first so requests go to http://localhost:8080.\n\nSuggested order: List plans → List service types → List members → Login → then write operations.\n\nSeed login: arun.kumar@example.com / Arun@123\nPending subscription for purchase: subscriptionId 35 (member 31).",
+    "description": "Import into Postman (File → Import). Start the Spring Boot app first so requests go to http://localhost:8080.\n\nRun Catalogue first, then Member workflow from top to bottom.\nRegister and login use the same member (alex.tester@example.com / Alex@123). If register fails because the email already exists, skip it and continue from login.\nRegister/login save memberId. Add subscription saves subscriptionId for purchase and booking.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -39,17 +39,24 @@
       ]
     },
     {
-      "name": "Members",
+      "name": "Member workflow",
       "item": [
         {
-          "name": "List all members",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/members"
-          }
-        },
-        {
           "name": "Register member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.memberId) {",
+                  "  pm.collectionVariables.set('memberId', String(json.memberId));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -62,73 +69,46 @@
         },
         {
           "name": "Login member",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.memberId) {",
+                  "  pm.collectionVariables.set('memberId', String(json.memberId));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"emailId\": \"arun.kumar@example.com\",\n  \"password\": \"Arun@123\"\n}"
+              "raw": "{\n  \"emailId\": \"alex.tester@example.com\",\n  \"password\": \"Alex@123\"\n}"
             },
             "url": "{{baseUrl}}/api/members/login"
           }
         },
         {
-          "name": "Get member",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/members/{{memberId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Subscription plans (admin)",
-      "item": [
-        {
-          "name": "Get plan (admin)",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/admin/subscription-plans/{{planId}}"
-          }
-        },
-        {
-          "name": "Create plan (admin)",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planName\": \"Trial\",\n  \"durationInMonths\": 1,\n  \"planPrice\": 9.99,\n  \"planDescription\": \"One month trial plan\",\n  \"planStatus\": \"ACTIVE\",\n  \"groupClassesAccess\": true,\n  \"personalTrainingAccess\": false,\n  \"exclusiveServices\": false\n}"
-            },
-            "url": "{{baseUrl}}/api/admin/subscription-plans"
-          }
-        },
-        {
-          "name": "Update plan (admin)",
-          "request": {
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planName\": \"Classic Plus\",\n  \"durationInMonths\": 1,\n  \"planPrice\": 34.99,\n  \"planDescription\": \"Updated classic plan\",\n  \"planStatus\": \"ACTIVE\",\n  \"groupClassesAccess\": true,\n  \"personalTrainingAccess\": false,\n  \"exclusiveServices\": false\n}"
-            },
-            "url": "{{baseUrl}}/api/admin/subscription-plans/{{planId}}"
-          }
-        },
-        {
-          "name": "Deactivate plan (admin)",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/admin/subscription-plans/{{planId}}"
-          }
-        }
-      ]
-    },
-    {
-      "name": "Subscriptions",
-      "item": [
-        {
           "name": "Add subscription",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.subscriptionId) {",
+                  "  pm.collectionVariables.set('subscriptionId', String(json.subscriptionId));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -150,14 +130,9 @@
             },
             "url": "{{baseUrl}}/api/subscriptions/{{subscriptionId}}/purchase"
           }
-        }
-      ]
-    },
-    {
-      "name": "Sessions and bookings",
-      "item": [
+        },
         {
-          "name": "Book session",
+          "name": "Book a session",
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -167,7 +142,31 @@
             },
             "url": "{{baseUrl}}/api/members/{{memberId}}/bookings"
           }
+        }
+      ]
+    },
+    {
+      "name": "Members",
+      "item": [
+        {
+          "name": "List all members",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members"
+          }
         },
+        {
+          "name": "Get member",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/{{memberId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sessions and bookings",
+      "item": [
         {
           "name": "List member bookings",
           "request": {
