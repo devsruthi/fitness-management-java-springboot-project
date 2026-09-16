@@ -74,37 +74,6 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     List<Booking> findBySession_SessionId(Integer sessionId);
 
-    @Query("""
-            SELECT st.serviceTypeId,
-                   st.serviceTypeName,
-                   st.serviceTypeDescription,
-                   st.serviceMode,
-                   st.maxParticipants,
-                   st.serviceTypeStatus,
-                   COUNT(b.bookingId)
-            FROM Booking b
-            JOIN b.session s
-            JOIN s.serviceType st
-            GROUP BY st.serviceTypeId,
-                     st.serviceTypeName,
-                     st.serviceTypeDescription,
-                     st.serviceMode,
-                     st.maxParticipants,
-                     st.serviceTypeStatus
-            ORDER BY COUNT(b.bookingId) DESC, st.serviceTypeName ASC
-            """)
-    List<Object[]> countBookingsByServiceType();
-
-    @Query("""
-            SELECT s.sessionId, COUNT(b.bookingId)
-            FROM Booking b
-            JOIN b.session s
-            WHERE b.bookingStatus = :status
-            GROUP BY s.sessionId
-            ORDER BY COUNT(b.bookingId) DESC, s.sessionId ASC
-            """)
-    List<Object[]> countBookingsBySessionAndStatus(@Param("status") BookingStatus status);
-
     void deleteByMember_MemberId(Integer memberId);
 
     void deleteBySession_SessionId(Integer sessionId);

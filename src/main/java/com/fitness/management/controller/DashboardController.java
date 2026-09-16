@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/admin/dashboard")
+@RequestMapping({"/api/admin/dashboard", "/api/dashboard"})
 public class DashboardController {
 
     private final DashboardService dashboardService;
@@ -32,14 +32,14 @@ public class DashboardController {
         return ResponseEntity.ok(dashboardService.listMostCancelledSessions());
     }
 
-    @GetMapping({"/monthly-revenue", "/revenue/monthly"})
+    @GetMapping("/monthly-revenue")
     public ResponseEntity<List<MonthlyRevenueResponse>> monthlyRevenue(
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month) {
         return ResponseEntity.ok(dashboardService.listMonthlyRevenue(year, month));
     }
 
-    @GetMapping({"/yearly-revenue", "/revenue/yearly"})
+    @GetMapping("/yearly-revenue")
     public ResponseEntity<List<YearlyRevenueResponse>> yearlyRevenue(
             @RequestParam(required = false) Integer year) {
         return ResponseEntity.ok(dashboardService.listYearlyRevenue(year));

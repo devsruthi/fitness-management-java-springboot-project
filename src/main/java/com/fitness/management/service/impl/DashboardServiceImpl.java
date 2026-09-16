@@ -5,20 +5,24 @@ import com.fitness.management.dto.response.MonthlyRevenueResponse;
 import com.fitness.management.dto.response.ServiceTypePopularityResponse;
 import com.fitness.management.dto.response.SessionResponse;
 import com.fitness.management.dto.response.YearlyRevenueResponse;
+import com.fitness.management.entity.Booking;
+import com.fitness.management.entity.Payment;
+import com.fitness.management.entity.ServiceType;
 import com.fitness.management.entity.enums.BookingStatus;
-import com.fitness.management.entity.enums.ServiceMode;
-import com.fitness.management.entity.enums.ServiceTypeStatus;
+import com.fitness.management.entity.enums.PaymentStatus;
 import com.fitness.management.exception.BusinessRuleException;
 import com.fitness.management.repository.BookingRepository;
 import com.fitness.management.repository.PaymentRepository;
-import com.fitness.management.repository.SessionRepository;
 import com.fitness.management.service.DashboardService;
 import java.math.BigDecimal;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,45 +31,52 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardServiceImpl implements DashboardService {
 
     private final BookingRepository bookingRepository;
-    private final SessionRepository sessionRepository;
     private final PaymentRepository paymentRepository;
 
-    public DashboardServiceImpl(
-            BookingRepository bookingRepository,
-            SessionRepository sessionRepository,
-            PaymentRepository paymentRepository) {
+    public DashboardServiceImpl(BookingRepository bookingRepository, PaymentRepository paymentRepository) {
         this.bookingRepository = bookingRepository;
-        this.sessionRepository = sessionRepository;
         this.paymentRepository = paymentRepository;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ServiceTypePopularityResponse> listMostBookedServiceTypes() {
-        List<ServiceTypePopularityResponse> results = new ArrayList<>();
-        for (Object[] row : bookingRepository.countBookingsByServiceType()) {
-            results.add(new ServiceTypePopularityResponse(
-                    toInt(row[0]),
-                    (String) row[1],
-                    (String) row[2],
-                    (ServiceMode) row[3],
-                    toInt(row[4]),
-                    (ServiceTypeStatus) row[5],
-                    toLong(row[6])));
+        Map<Integer, ServiceTypePopularityResponse> byType = new LinkedHashMap<>();
+        for (Booking booking : bookingRepository.findAllWithDetails()) {
+            ServiceType serviceType = booking.getSession().getServiceType();
+            ServiceTypePopularityResponse current = byType.get(serviceType.getServiceTypeId());
+            long count = current == null ? 1L : current.bookingCount() + 1L;
+            byType.put(serviceType.getServiceTypeId(), new ServiceTypePopularityResponse(
+                    serviceType.getServiceTypeId(),
+                    serviceType.getServiceTypeName(),
+                    serviceType.getServiceTypeDescription(),
+                    serviceType.getServiceMode(),
+                    serviceType.getMaxParticipants(),
+                    serviceType.getServiceTypeStatus(),
+                    count));
         }
-        return results;
+        return byType.values().stream()
+                .sorted(Comparator.comparingLong(ServiceTypePopularityResponse::bookingCount).reversed())
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<CancelledSessionStatsResponse> listMostCancelledSessions() {
-        List<CancelledSessionStatsResponse> results = new ArrayList<>();
-        for (Object[] row : bookingRepository.countBookingsBySessionAndStatus(BookingStatus.CANCELLED)) {
-            Integer sessionId = toInt(row[0]);
-            sessionRepository.findWithDetailsBySessionId(sessionId).ifPresent(session -> results.add(
-                    new CancelledSessionStatsResponse(SessionResponse.from(session), toLong(row[1]))));
+        Map<Integer, Long> cancelledCounts = new LinkedHashMap<>();
+        Map<Integer, SessionResponse> sessions = new LinkedHashMap<>();
+        for (Booking booking : bookingRepository.findAllWithDetails()) {
+            if (booking.getBookingStatus() != BookingStatus.CANCELLED) {
+                continue;
+            }
+            Integer sessionId = booking.getSession().getSessionId();
+            cancelledCounts.merge(sessionId, 1L, Long::sum);
+            sessions.putIfAbsent(sessionId, SessionResponse.from(booking.getSession()));
         }
-        return results;
+        return cancelledCounts.entrySet().stream()
+                .sorted(Map.Entry.<Integer, Long>comparingByValue().reversed())
+                .map(entry -> new CancelledSessionStatsResponse(sessions.get(entry.getKey()), entry.getValue()))
+                .toList();
     }
 
     @Override
@@ -75,55 +86,58 @@ public class DashboardServiceImpl implements DashboardService {
             throw new BusinessRuleException("month must be between 1 and 12", HttpStatus.BAD_REQUEST);
         }
 
-        List<MonthlyRevenueResponse> results = new ArrayList<>();
-        for (Object[] row : paymentRepository.sumSuccessfulPaymentsByMonth()) {
-            int revenueYear = toInt(row[0]);
-            int revenueMonth = toInt(row[1]);
-            if (year != null && revenueYear != year) {
+        Map<String, MonthlyRevenueResponse> totals = new LinkedHashMap<>();
+        for (Payment payment : paymentRepository.findByPaymentStatus(PaymentStatus.SUCCESS)) {
+            int paymentYear = payment.getPaymentDate().getYear();
+            int paymentMonth = payment.getPaymentDate().getMonthValue();
+            if (year != null && paymentYear != year) {
                 continue;
             }
-            if (month != null && revenueMonth != month) {
+            if (month != null && paymentMonth != month) {
                 continue;
             }
-            results.add(new MonthlyRevenueResponse(
-                    revenueYear,
-                    revenueMonth,
-                    Month.of(revenueMonth).getDisplayName(TextStyle.FULL, Locale.ENGLISH),
-                    toMoney(row[2]),
-                    toLong(row[3])));
+            String key = paymentYear + "-" + paymentMonth;
+            BigDecimal amount = payment.getPaymentAmount() == null ? BigDecimal.ZERO : payment.getPaymentAmount();
+            MonthlyRevenueResponse current = totals.get(key);
+            if (current == null) {
+                totals.put(key, new MonthlyRevenueResponse(
+                        paymentYear,
+                        paymentMonth,
+                        Month.of(paymentMonth).getDisplayName(TextStyle.FULL, Locale.ENGLISH),
+                        amount,
+                        1L));
+            } else {
+                totals.put(key, new MonthlyRevenueResponse(
+                        current.year(),
+                        current.month(),
+                        current.monthName(),
+                        current.totalRevenue().add(amount),
+                        current.paymentCount() + 1L));
+            }
         }
-        return results;
+        return new ArrayList<>(totals.values());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<YearlyRevenueResponse> listYearlyRevenue(Integer year) {
-        List<YearlyRevenueResponse> results = new ArrayList<>();
-        for (Object[] row : paymentRepository.sumSuccessfulPaymentsByYear()) {
-            int revenueYear = toInt(row[0]);
-            if (year != null && revenueYear != year) {
+        Map<Integer, YearlyRevenueResponse> totals = new LinkedHashMap<>();
+        for (Payment payment : paymentRepository.findByPaymentStatus(PaymentStatus.SUCCESS)) {
+            int paymentYear = payment.getPaymentDate().getYear();
+            if (year != null && paymentYear != year) {
                 continue;
             }
-            results.add(new YearlyRevenueResponse(revenueYear, toMoney(row[1]), toLong(row[2])));
+            BigDecimal amount = payment.getPaymentAmount() == null ? BigDecimal.ZERO : payment.getPaymentAmount();
+            YearlyRevenueResponse current = totals.get(paymentYear);
+            if (current == null) {
+                totals.put(paymentYear, new YearlyRevenueResponse(paymentYear, amount, 1L));
+            } else {
+                totals.put(paymentYear, new YearlyRevenueResponse(
+                        paymentYear,
+                        current.totalRevenue().add(amount),
+                        current.paymentCount() + 1L));
+            }
         }
-        return results;
-    }
-
-    private static int toInt(Object value) {
-        return ((Number) value).intValue();
-    }
-
-    private static long toLong(Object value) {
-        return ((Number) value).longValue();
-    }
-
-    private static BigDecimal toMoney(Object value) {
-        if (value == null) {
-            return BigDecimal.ZERO.setScale(2);
-        }
-        if (value instanceof BigDecimal amount) {
-            return amount;
-        }
-        return new BigDecimal(value.toString());
+        return new ArrayList<>(totals.values());
     }
 }
