@@ -91,30 +91,35 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MemberSubscriptionResponse getCurrentOrLatestSubscription(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
         }
 
         return memberSubscriptionRepository
-                .findFirstByMember_MemberIdAndSubscriptionStatusOrderByStartDateDescSubscriptionIdDesc(
-                        memberId, SubscriptionStatus.ACTIVE)
+                .findByMemberIdAndStatusWithDetails(memberId, SubscriptionStatus.ACTIVE)
+                .stream()
+                .findFirst()
                 .map(subscription -> MemberSubscriptionResponse.from(subscription, "Current active subscription"))
                 .orElseGet(() -> MemberSubscriptionResponse.from(
                         memberSubscriptionRepository
-                                .findFirstByMember_MemberIdOrderBySubscriptionIdDesc(memberId)
+                                .findByMemberIdWithDetails(memberId)
+                                .stream()
+                                .findFirst()
                                 .orElseThrow(() -> new ResourceNotFoundException(
                                         "No subscription found for this member")),
                         "Latest subscription"));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<PaymentResponse> listMemberPayments(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
         }
         return paymentRepository
-                .findBySubscription_Member_MemberIdOrderByPaymentDateDescPaymentIdDesc(memberId)
+                .findByMemberIdWithDetails(memberId)
                 .stream()
                 .map(PaymentResponse::from)
                 .toList();

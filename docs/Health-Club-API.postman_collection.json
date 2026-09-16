@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Health Club Operations REST API",
-    "description": "Import into Postman (File → Import). Start the Spring Boot app first so requests go to http://localhost:8080.\n\nRun Catalogue first, then Member workflow from top to bottom.\nRegister and login use the same member (alex.tester@example.com / Alex@123). If register fails because the email already exists, skip it and continue from login.\nRegister/login save memberId. Add subscription saves subscriptionId. Book a session saves bookingId.\nDelete member also removes related bookings, subscriptions, and payments. Cancel/delete session also updates or removes related bookings.",
+    "description": "Import into Postman (File → Import). Restart the Spring Boot app after pulling these routes.\n\nMember lookup routes:\n- GET /api/members/{{memberId}}/subscriptions/current\n- GET /api/members/{{memberId}}/bookings/upcoming\n- GET /api/members/{{memberId}}/bookings/cancelled\n- GET /api/members/{{memberId}}/payments",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -18,31 +18,19 @@
       "item": [
         {
           "name": "List active plans",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/subscription-plans"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/subscription-plans" }
         },
         {
           "name": "List service types",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/service-types"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/service-types" }
         },
         {
           "name": "List scheduled sessions",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/sessions"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/sessions" }
         },
         {
           "name": "List all bookings",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/bookings"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/bookings" }
         }
       ]
     },
@@ -58,9 +46,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "if (json.memberId) {",
-                  "  pm.collectionVariables.set('memberId', String(json.memberId));",
-                  "}"
+                  "if (json.memberId) { pm.collectionVariables.set('memberId', String(json.memberId)); }"
                 ]
               }
             }
@@ -84,9 +70,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "if (json.memberId) {",
-                  "  pm.collectionVariables.set('memberId', String(json.memberId));",
-                  "}"
+                  "if (json.memberId) { pm.collectionVariables.set('memberId', String(json.memberId)); }"
                 ]
               }
             }
@@ -110,9 +94,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "if (json.subscriptionId) {",
-                  "  pm.collectionVariables.set('subscriptionId', String(json.subscriptionId));",
-                  "}"
+                  "if (json.subscriptionId) { pm.collectionVariables.set('subscriptionId', String(json.subscriptionId)); }"
                 ]
               }
             }
@@ -120,10 +102,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": 1\n}"
-            },
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": 1\n}" },
             "url": "{{baseUrl}}/api/members/{{memberId}}/subscriptions"
           }
         },
@@ -132,10 +111,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"paymentMethod\": \"CREDIT_CARD\"\n}"
-            },
+            "body": { "mode": "raw", "raw": "{\n  \"paymentMethod\": \"CREDIT_CARD\"\n}" },
             "url": "{{baseUrl}}/api/subscriptions/{{subscriptionId}}/purchase"
           }
         },
@@ -148,12 +124,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "const json = pm.response.json();",
-                  "if (json.bookingId) {",
-                  "  pm.collectionVariables.set('bookingId', String(json.bookingId));",
-                  "}",
-                  "if (json.sessionId) {",
-                  "  pm.collectionVariables.set('sessionId', String(json.sessionId));",
-                  "}"
+                  "if (json.bookingId) { pm.collectionVariables.set('bookingId', String(json.bookingId)); }",
+                  "if (json.sessionId) { pm.collectionVariables.set('sessionId', String(json.sessionId)); }"
                 ]
               }
             }
@@ -161,10 +133,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"sessionId\": 1\n}"
-            },
+            "body": { "mode": "raw", "raw": "{\n  \"sessionId\": 1\n}" },
             "url": "{{baseUrl}}/api/members/{{memberId}}/bookings"
           }
         },
@@ -203,24 +172,15 @@
       "item": [
         {
           "name": "List all members",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/members"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members" }
         },
         {
           "name": "Get member",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/members/{{memberId}}"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}" }
         },
         {
           "name": "Delete member",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/members/{{memberId}}"
-          }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/members/{{memberId}}" }
         }
       ]
     },
@@ -229,38 +189,23 @@
       "item": [
         {
           "name": "Scheduled upcoming sessions",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/sessions/upcoming"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/sessions/upcoming" }
         },
         {
           "name": "Completed sessions",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/sessions/completed"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/sessions/completed" }
         },
         {
           "name": "Cancelled sessions",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/sessions/cancelled"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/sessions/cancelled" }
         },
         {
           "name": "Cancel session",
-          "request": {
-            "method": "PUT",
-            "url": "{{baseUrl}}/api/sessions/{{sessionId}}/cancel"
-          }
+          "request": { "method": "PUT", "url": "{{baseUrl}}/api/sessions/{{sessionId}}/cancel" }
         },
         {
           "name": "Delete session",
-          "request": {
-            "method": "DELETE",
-            "url": "{{baseUrl}}/api/sessions/{{sessionId}}"
-          }
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/sessions/{{sessionId}}" }
         }
       ]
     },
@@ -269,24 +214,15 @@
       "item": [
         {
           "name": "List member bookings",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/members/{{memberId}}/bookings"
-          }
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}/bookings" }
         },
         {
-          "name": "List cancelled bookings",
-          "request": {
-            "method": "GET",
-            "url": "{{baseUrl}}/api/bookings/cancelled"
-          }
+          "name": "List member cancelled bookings",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/cancelled" }
         },
         {
           "name": "Cancel booking by member",
-          "request": {
-            "method": "PUT",
-            "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/{{bookingId}}/cancel"
-          }
+          "request": { "method": "PUT", "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/{{bookingId}}/cancel" }
         }
       ]
     }

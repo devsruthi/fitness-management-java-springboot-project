@@ -30,39 +30,37 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SessionResponse> listScheduledSessions() {
-        return sessionRepository
-                .findBySessionStatusOrderBySessionDateAscStartTimeAsc(SessionStatus.SCHEDULED)
-                .stream()
-                .map(SessionResponse::from)
-                .toList();
+        return mapSessions(sessionRepository.findByStatusWithDetails(SessionStatus.SCHEDULED));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SessionResponse> listUpcomingScheduledSessions() {
-        return sessionRepository
-                .findUpcomingScheduledSessions(SessionStatus.SCHEDULED, LocalDate.now(), LocalTime.now())
-                .stream()
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+        return sessionRepository.findByStatusWithDetails(SessionStatus.SCHEDULED).stream()
+                .filter(session -> {
+                    LocalDate sessionDate = session.getSessionDate();
+                    LocalTime startTime = session.getStartTime();
+                    return sessionDate.isAfter(today)
+                            || (sessionDate.isEqual(today) && !startTime.isBefore(now));
+                })
                 .map(SessionResponse::from)
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SessionResponse> listCompletedSessions() {
-        return sessionRepository
-                .findBySessionStatusOrderBySessionDateAscStartTimeAsc(SessionStatus.COMPLETED)
-                .stream()
-                .map(SessionResponse::from)
-                .toList();
+        return mapSessions(sessionRepository.findByStatusWithDetails(SessionStatus.COMPLETED));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<SessionResponse> listCancelledSessions() {
-        return sessionRepository
-                .findBySessionStatusOrderBySessionDateAscStartTimeAsc(SessionStatus.CANCELLED)
-                .stream()
-                .map(SessionResponse::from)
-                .toList();
+        return mapSessions(sessionRepository.findByStatusWithDetails(SessionStatus.CANCELLED));
     }
 
     @Override
@@ -103,5 +101,9 @@ public class SessionServiceImpl implements SessionService {
         sessionRepository.deleteById(sessionId);
 
         return new MessageResponse("Session and related bookings and session updates deleted");
+    }
+
+    private List<SessionResponse> mapSessions(List<Session> sessions) {
+        return sessions.stream().map(SessionResponse::from).toList();
     }
 }

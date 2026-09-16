@@ -2,10 +2,15 @@ package com.fitness.management.controller;
 
 import com.fitness.management.dto.request.MemberLoginRequest;
 import com.fitness.management.dto.request.MemberRegistrationRequest;
+import com.fitness.management.dto.response.BookingResponse;
 import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
+import com.fitness.management.dto.response.MemberSubscriptionResponse;
 import com.fitness.management.dto.response.MessageResponse;
+import com.fitness.management.dto.response.PaymentResponse;
+import com.fitness.management.service.BookingService;
 import com.fitness.management.service.MemberService;
+import com.fitness.management.service.SubscriptionService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -23,9 +28,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class MemberController {
 
     private final MemberService memberService;
+    private final BookingService bookingService;
+    private final SubscriptionService subscriptionService;
 
-    public MemberController(MemberService memberService) {
+    public MemberController(
+            MemberService memberService,
+            BookingService bookingService,
+            SubscriptionService subscriptionService) {
         this.memberService = memberService;
+        this.bookingService = bookingService;
+        this.subscriptionService = subscriptionService;
     }
 
     @GetMapping
@@ -46,6 +58,31 @@ public class MemberController {
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberResponse> getMember(@PathVariable Integer memberId) {
         return ResponseEntity.ok(memberService.getMember(memberId));
+    }
+
+    @GetMapping("/{memberId}/subscriptions/current")
+    public ResponseEntity<MemberSubscriptionResponse> getCurrentSubscription(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(subscriptionService.getCurrentOrLatestSubscription(memberId));
+    }
+
+    @GetMapping("/{memberId}/payments")
+    public ResponseEntity<List<PaymentResponse>> listPayments(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(subscriptionService.listMemberPayments(memberId));
+    }
+
+    @GetMapping("/{memberId}/bookings")
+    public ResponseEntity<List<BookingResponse>> listBookings(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(bookingService.listMemberBookings(memberId));
+    }
+
+    @GetMapping("/{memberId}/bookings/upcoming")
+    public ResponseEntity<List<BookingResponse>> listUpcomingBookings(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(bookingService.listUpcomingMemberBookings(memberId));
+    }
+
+    @GetMapping("/{memberId}/bookings/cancelled")
+    public ResponseEntity<List<BookingResponse>> listCancelledBookings(@PathVariable Integer memberId) {
+        return ResponseEntity.ok(bookingService.listCancelledMemberBookings(memberId));
     }
 
     @DeleteMapping("/{memberId}")

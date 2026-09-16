@@ -55,7 +55,7 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessRuleException("You do not have an active subscription!");
         }
 
-        Session session = sessionRepository.findById(request.sessionId())
+        Session session = sessionRepository.findWithDetailsBySessionId(request.sessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
         if (session.getSessionStatus() == SessionStatus.COMPLETED
                 || session.getSessionStatus() == SessionStatus.CANCELLED) {
@@ -79,31 +79,34 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingResponse> listAllBookings() {
-        return bookingRepository.findAllByOrderByBookingCreatedTimeDesc().stream()
+        return bookingRepository.findAllWithDetails().stream()
                 .map(booking -> BookingResponse.from(booking, null))
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingResponse> listCancelledBookings() {
-        return bookingRepository.findByBookingStatusOrderByBookingCancelledTimeDesc(BookingStatus.CANCELLED)
-                .stream()
+        return bookingRepository.findByStatusWithDetails(BookingStatus.CANCELLED).stream()
                 .map(booking -> BookingResponse.from(booking, null))
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingResponse> listMemberBookings(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
         }
-        return bookingRepository.findByMember_MemberIdOrderByBookingCreatedTimeDesc(memberId).stream()
+        return bookingRepository.findByMemberIdWithDetails(memberId).stream()
                 .map(booking -> BookingResponse.from(booking, null))
                 .toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingResponse> listUpcomingMemberBookings(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
@@ -112,7 +115,7 @@ public class BookingServiceImpl implements BookingService {
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();
         return bookingRepository
-                .findByMember_MemberIdAndBookingStatusOrderByBookingCreatedTimeDesc(memberId, BookingStatus.BOOKED)
+                .findByMemberIdAndStatusWithDetails(memberId, BookingStatus.BOOKED)
                 .stream()
                 .filter(booking -> booking.getSession().getSessionStatus() == SessionStatus.SCHEDULED)
                 .filter(booking -> {
@@ -128,13 +131,13 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingResponse> listCancelledMemberBookings(Integer memberId) {
         if (!memberRepository.existsById(memberId)) {
             throw new ResourceNotFoundException("Member not found");
         }
         return bookingRepository
-                .findByMember_MemberIdAndBookingStatusOrderByBookingCancelledTimeDesc(
-                        memberId, BookingStatus.CANCELLED)
+                .findByMemberIdAndStatusWithDetails(memberId, BookingStatus.CANCELLED)
                 .stream()
                 .map(booking -> BookingResponse.from(booking, null))
                 .toList();
@@ -147,7 +150,7 @@ public class BookingServiceImpl implements BookingService {
             throw new ResourceNotFoundException("Member not found");
         }
 
-        Booking booking = bookingRepository.findByBookingIdAndMember_MemberId(bookingId, memberId)
+        Booking booking = bookingRepository.findByBookingIdAndMemberIdWithDetails(bookingId, memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found for this member"));
 
         if (booking.getBookingStatus() == BookingStatus.CANCELLED) {
