@@ -4,8 +4,11 @@ import com.fitness.management.dto.request.MemberLoginRequest;
 import com.fitness.management.dto.request.MemberRegistrationRequest;
 import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
+import java.util.List;
 
 public interface MemberService {
+
+    List<MemberResponse> listMembers();
 
     MemberAuthResponse register(MemberRegistrationRequest request);
 

@@ -45,9 +45,19 @@ If the app fails on startup, MySQL is not running, or the database name / userna
 
 # Testing
 
-Use a browser or Postman:
+Use a browser or Postman.
+
+A ready-to-import Postman collection is in `docs/Health-Club-API.postman_collection.json`.
+
+1. Start the application (MySQL + `./mvnw spring-boot:run`).
+2. Open Postman → **Import** → select that file.
+3. Confirm `baseUrl` is `http://localhost:8080`, then send requests.
+
+Quick checks:
 
 - `GET http://localhost:8080/api/subscription-plans`
+- `GET http://localhost:8080/api/service-types`
+- `GET http://localhost:8080/api/members`
 - `GET http://localhost:8080/api/sessions`
 
 A successful response returns JSON.

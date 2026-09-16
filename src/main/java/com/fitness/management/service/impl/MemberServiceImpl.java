@@ -11,6 +11,7 @@ import com.fitness.management.exception.ResourceNotFoundException;
 import com.fitness.management.repository.MemberRepository;
 import com.fitness.management.service.MemberService;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,13 @@ public class MemberServiceImpl implements MemberService {
 
     public MemberServiceImpl(MemberRepository memberRepository) {
         this.memberRepository = memberRepository;
+    }
+
+    @Override
+    public List<MemberResponse> listMembers() {
+        return memberRepository.findAll().stream()
+                .map(MemberResponse::from)
+                .toList();
     }
 
     @Override

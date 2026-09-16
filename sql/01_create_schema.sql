@@ -3,9 +3,9 @@
 --  ---------------------------- CREATE SCHEMA/DATABASE ---------------------------- --
 -- ******************************************************************************** --
 
-CREATE SCHEMA health_club_database_system;
+CREATE SCHEMA health_club_operations_system;
 
-USE health_club_database_system;
+USE health_club_operations_system;
 
 set sql_safe_updates = 0;
 

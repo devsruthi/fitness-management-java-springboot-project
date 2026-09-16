@@ -6,6 +6,7 @@ import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
 import com.fitness.management.service.MemberService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,11 @@ public class MemberController {
 
     public MemberController(MemberService memberService) {
         this.memberService = memberService;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<MemberResponse>> listMembers() {
+        return ResponseEntity.ok(memberService.listMembers());
     }
 
     @PostMapping("/register")
