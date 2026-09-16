@@ -4,6 +4,7 @@ import com.fitness.management.dto.request.PurchaseRequest;
 import com.fitness.management.dto.request.SubscriptionPlanRequest;
 import com.fitness.management.dto.request.SubscriptionRequest;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
+import com.fitness.management.dto.response.MemberWithSubscriptionResponse;
 import com.fitness.management.dto.response.PaymentResponse;
 import com.fitness.management.dto.response.PurchaseResponse;
 import com.fitness.management.dto.response.SubscriptionPlanResponse;
@@ -18,6 +19,10 @@ public interface SubscriptionService {
     MemberSubscriptionResponse getCurrentOrLatestSubscription(Integer memberId);
 
     List<PaymentResponse> listMemberPayments(Integer memberId);
+
+    List<MemberWithSubscriptionResponse> listMembersWithActiveSubscription();
+
+    List<MemberWithSubscriptionResponse> listMembersExpiringSoon(Integer days);
 
     PurchaseResponse purchase(Integer subscriptionId, PurchaseRequest request);
 

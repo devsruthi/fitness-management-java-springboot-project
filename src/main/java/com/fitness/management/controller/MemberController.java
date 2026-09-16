@@ -6,6 +6,7 @@ import com.fitness.management.dto.response.BookingResponse;
 import com.fitness.management.dto.response.MemberAuthResponse;
 import com.fitness.management.dto.response.MemberResponse;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
+import com.fitness.management.dto.response.MemberWithSubscriptionResponse;
 import com.fitness.management.dto.response.MessageResponse;
 import com.fitness.management.dto.response.PaymentResponse;
 import com.fitness.management.service.BookingService;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -43,6 +45,17 @@ public class MemberController {
     @GetMapping
     public ResponseEntity<List<MemberResponse>> listMembers() {
         return ResponseEntity.ok(memberService.listMembers());
+    }
+
+    @GetMapping("/active-subscriptions")
+    public ResponseEntity<List<MemberWithSubscriptionResponse>> listMembersWithActiveSubscription() {
+        return ResponseEntity.ok(subscriptionService.listMembersWithActiveSubscription());
+    }
+
+    @GetMapping("/expiring-soon")
+    public ResponseEntity<List<MemberWithSubscriptionResponse>> listMembersExpiringSoon(
+            @RequestParam Integer days) {
+        return ResponseEntity.ok(subscriptionService.listMembersExpiringSoon(days));
     }
 
     @PostMapping("/register")

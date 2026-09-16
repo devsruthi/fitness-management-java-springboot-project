@@ -4,6 +4,7 @@ import com.fitness.management.dto.request.PurchaseRequest;
 import com.fitness.management.dto.request.SubscriptionPlanRequest;
 import com.fitness.management.dto.request.SubscriptionRequest;
 import com.fitness.management.dto.response.MemberSubscriptionResponse;
+import com.fitness.management.dto.response.MemberWithSubscriptionResponse;
 import com.fitness.management.dto.response.PaymentResponse;
 import com.fitness.management.dto.response.PurchaseResponse;
 import com.fitness.management.dto.response.SubscriptionPlanResponse;
@@ -23,7 +24,11 @@ import com.fitness.management.repository.PaymentRepository;
 import com.fitness.management.repository.SubscriptionPlanRepository;
 import com.fitness.management.service.SubscriptionService;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,6 +128,52 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .stream()
                 .map(PaymentResponse::from)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberWithSubscriptionResponse> listMembersWithActiveSubscription() {
+        LocalDate today = LocalDate.now();
+        return latestSubscriptions().stream()
+                .filter(subscription -> isCurrentlyActive(subscription, today))
+                .map(MemberWithSubscriptionResponse::from)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MemberWithSubscriptionResponse> listMembersExpiringSoon(Integer days) {
+        if (days == null || days < 1) {
+            throw new BusinessRuleException("days must be 1 or more", HttpStatus.BAD_REQUEST);
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate expiryLimit = today.plusDays(days);
+        return latestSubscriptions().stream()
+                .filter(subscription -> isCurrentlyActive(subscription, today))
+                .filter(subscription -> {
+                    LocalDate endDate = endDate(subscription);
+                    return !endDate.isAfter(expiryLimit);
+                })
+                .map(MemberWithSubscriptionResponse::from)
+                .toList();
+    }
+
+    private List<MemberSubscription> latestSubscriptions() {
+        Map<Integer, MemberSubscription> latestByMember = new LinkedHashMap<>();
+        for (MemberSubscription subscription : memberSubscriptionRepository.findAllWithMemberAndPlan()) {
+            latestByMember.putIfAbsent(subscription.getMember().getMemberId(), subscription);
+        }
+        return new ArrayList<>(latestByMember.values());
+    }
+
+    private boolean isCurrentlyActive(MemberSubscription subscription, LocalDate today) {
+        return subscription.getSubscriptionStatus() == SubscriptionStatus.ACTIVE
+                && endDate(subscription).isAfter(today);
+    }
+
+    private LocalDate endDate(MemberSubscription subscription) {
+        return subscription.getStartDate().plusMonths(subscription.getPlan().getDurationInMonths());
     }
 
     @Override

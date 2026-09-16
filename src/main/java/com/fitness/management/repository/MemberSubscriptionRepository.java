@@ -46,5 +46,13 @@ public interface MemberSubscriptionRepository extends JpaRepository<MemberSubscr
             """)
     List<MemberSubscription> findByMemberIdWithDetails(@Param("memberId") Integer memberId);
 
+    @Query("""
+            SELECT s FROM MemberSubscription s
+            JOIN FETCH s.member
+            JOIN FETCH s.plan
+            ORDER BY s.member.memberId ASC, s.subscriptionId DESC
+            """)
+    List<MemberSubscription> findAllWithMemberAndPlan();
+
     void deleteByMember_MemberId(Integer memberId);
 }

@@ -10,7 +10,8 @@
     { "key": "planId", "value": "1" },
     { "key": "subscriptionId", "value": "35" },
     { "key": "sessionId", "value": "1" },
-    { "key": "bookingId", "value": "1" }
+    { "key": "bookingId", "value": "1" },
+    { "key": "days", "value": "7" }
   ],
   "item": [
     {
@@ -23,6 +24,10 @@
         {
           "name": "List service types",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/service-types" }
+        },
+        {
+          "name": "List all members",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members" }
         },
         {
           "name": "List scheduled sessions",
@@ -175,6 +180,17 @@
           "request": { "method": "GET", "url": "{{baseUrl}}/api/members" }
         },
         {
+          "name": "List members with active subscription",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/members/active-subscriptions" }
+        },
+        {
+          "name": "List members expiring soon",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/members/expiring-soon?days={{days}}"
+          }
+        },
+        {
           "name": "Get member",
           "request": { "method": "GET", "url": "{{baseUrl}}/api/members/{{memberId}}" }
         },
@@ -223,6 +239,31 @@
         {
           "name": "Cancel booking by member",
           "request": { "method": "PUT", "url": "{{baseUrl}}/api/members/{{memberId}}/bookings/{{bookingId}}/cancel" }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard (admin)",
+      "item": [
+        {
+          "name": "Most booked service types",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/most-booked-service-types" }
+        },
+        {
+          "name": "Most cancelled sessions",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/most-cancelled-sessions" }
+        },
+        {
+          "name": "Revenue per month",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/monthly" }
+        },
+        {
+          "name": "Revenue per month for a year",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/monthly?year=2026" }
+        },
+        {
+          "name": "Revenue per year",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/admin/dashboard/revenue/yearly" }
         }
       ]
     }
