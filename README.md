@@ -4,6 +4,26 @@ A Java Spring Boot application that provides REST services for a fitness and wel
 
 This project was developed for the M604 Advanced Programming module.
 
+## Overview
+
+Club members can register, buy a subscription plan, book sessions, and cancel bookings. Admin APIs show popular services, cancelled sessions, and revenue.
+
+## Member workflow
+
+1. Register / login
+2. Choose a subscription plan
+3. Purchase (payment) to activate the plan
+4. Book a session
+5. View current subscription, bookings, and payment history
+
+## Modules
+
+- **Members** — register, login, profile, delete, active / expiring subscriptions
+- **Subscriptions** — plans, add plan, purchase
+- **Sessions** — scheduled, upcoming, completed, cancelled; cancel or delete a session
+- **Bookings** — book a session, list bookings, cancel a booking
+- **Dashboard** — most booked service types, most cancelled sessions, monthly and yearly revenue
+
 # Database setup and connection
 
 Run the SQL files in this order in MySQL Workbench:
